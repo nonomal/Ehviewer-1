@@ -1,7 +1,9 @@
-project(ehviewer)
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.14)
+project(ehviewer C ASM)
+include(FetchContent)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections -fdata-sections -flto \
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -fvisibility=hidden -fvisibility-inlines-hidden -funroll-loops -flto \
            -mllvm -polly \
            -mllvm -polly-run-dce \
            -mllvm -polly-run-inliner \
@@ -12,6 +14,22 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -fvisibility=hidden -fvisibility-inli
            -mllvm -polly-vectorizer=stripmine \
            -mllvm -polly-detect-profitability-min-per-loop-insts=40 \
            -mllvm -polly-invariant-load-hoisting")
+endif (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+# Change the default path of fetch content to avoid downloading the same dependencies per architecture
+get_filename_component(deps "../_deps" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
+set(FETCHCONTENT_BASE_DIR ${deps})
+
+set(BUILD_TESTING 0)
+
+FetchContent_Declare(liblzma
+        GIT_REPOSITORY https://git.tukaani.org/xz.git
+        GIT_TAG v5.4.3
+        PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/0001-Don-t-build-other-binarys.patch || cd .
+        )
+
+FetchContent_MakeAvailable(liblzma)
+include_directories(${liblzma_SOURCE_DIR}/src/liblzma/api)
 
 # Build GNUTLS libnettle
 add_subdirectory(nettle)
@@ -27,24 +45,31 @@ set(HAVE_NETTLE_PBKDF2_H 1)
 set(HAVE_NETTLE_RIPEMD160_H 1)
 set(HAVE_NETTLE_SHA_H 1)
 
-# Build liblzma
-add_subdirectory(liblzma)
-
 # Configure lzma support for libarchive
-include_directories(liblzma/src/liblzma/api)
 SET(HAVE_LIBLZMA 1)
 SET(HAVE_LZMA_H 1)
 SET(HAVE_LZMA_STREAM_ENCODER_MT 1)
 SET(HAVE_LZMADEC_H 1)
 SET(HAVE_LIBLZMADEC 1)
 
-# Configure libarchive link's static lib
-SET(LIBARCHIVE_CUSTOM_LIBS "liblzma" "nettle")
+option(ENABLE_TAR OFF)
+option(ENABLE_CPIO OFF)
+option(ENABLE_CAT OFF)
+option(ENABLE_UNZIP OFF)
+option(ENABLE_TEST OFF)
 
-# Build libarchive
-add_subdirectory(libarchive)
+# Configure libarchive link's static lib
+SET(LIBARCHIVE_CUSTOM_LIBS "nettle" "liblzma")
+
+FetchContent_Declare(libarchive
+        GIT_REPOSITORY https://github.com/libarchive/libarchive
+        GIT_TAG v3.7.0
+        PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/0001-Hide-symbols.patch ${CMAKE_CURRENT_LIST_DIR}/0002-Insert-link-libs.patch || cd .
+        )
+
+FetchContent_MakeAvailable(libarchive)
+include_directories(${libarchive_SOURCE_DIR}/libarchive)
 
 # Build and link our app's native lib
-add_library(${PROJECT_NAME} SHARED main.c archive.c image.c)
-target_include_directories(${PROJECT_NAME} PUBLIC libarchive/libarchive)
-target_link_libraries(${PROJECT_NAME} archive_static log jnigraphics GLESv2 -Wl,--gc-sections)
+add_library(${PROJECT_NAME} SHARED archive.c gifutils.c natsort/strnatcmp.c)
+target_link_libraries(${PROJECT_NAME} archive_static log)

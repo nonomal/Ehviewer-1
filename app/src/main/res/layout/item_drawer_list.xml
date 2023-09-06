@@ -4,8 +4,8 @@
   ~ This file is part of EhViewer
   ~
   ~ EhViewer is free software: you can redistribute it and/or modify it
-  ~ under the terms of the GNU GeneralPublic License as published
-  ~ by the Free Software Foundation,either version 3 of the License, or
+  ~ under the terms of the GNU General Public License as published
+  ~ by the Free Software Foundation, either version 3 of the License, or
   ~ (at your option) any later version.
   ~
   ~ EhViewer is distributed in the hope that it will be useful, but WITHOUT
@@ -24,24 +24,35 @@
     android:orientation="horizontal">
 
     <TextView
-        android:id="@+id/tv_key"
+        android:id="@+id/text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
         android:layout_weight="1"
-        android:paddingLeft="?attr/listPreferredItemPaddingLeft"
+        android:paddingStart="?attr/listPreferredItemPaddingLeft"
+        android:paddingVertical="@dimen/strip_item_padding_v"
         android:textAppearance="?attr/textAppearanceListItemSmall"
         android:textColor="?android:attr/textColorPrimary" />
 
     <ImageView
-        android:id="@+id/iv_option"
+        android:id="@+id/edit"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:paddingStart="?attr/listPreferredItemPaddingLeft"
+        android:paddingEnd="?attr/listPreferredItemPaddingRight"
+        android:visibility="gone"
+        app:srcCompat="@drawable/v_pencil_dark_x24" />
+
+    <ImageView
+        android:id="@+id/option"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="center_vertical"
         android:clickable="true"
         android:focusable="true"
-        android:paddingLeft="?attr/listPreferredItemPaddingLeft"
-        android:paddingRight="?attr/listPreferredItemPaddingRight"
+        android:paddingStart="?attr/listPreferredItemPaddingLeft"
+        android:paddingEnd="?attr/listPreferredItemPaddingRight"
         app:srcCompat="@drawable/ic_baseline_reorder_24" />
 
 </LinearLayout>

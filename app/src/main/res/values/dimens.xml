@@ -16,15 +16,17 @@
 
 <resources>
 
+    <dimen name="signinscreen_landscape_caption_frame_width">480dp</dimen>
+    <dimen name="signinscreen_landscape_caption_text_width">384dp</dimen>
+    <dimen name="gallery_detail_card_landscape_width">480dp</dimen>
+
     <dimen name="keyline_margin">16dp</dimen>
     <dimen name="single_max_width">260dp</dimen>
-    <dimen name="drawer_max_width">280dp</dimen>
+
+    <dimen name="strip_item_padding">8dp</dimen>
 
     <!-- Text size -->
-    <dimen name="text_super_large">24sp</dimen>
-    <dimen name="text_little_large">20sp</dimen>
     <dimen name="text_little_small">16sp</dimen>
-    <dimen name="text_small">14sp</dimen>
     <dimen name="text_super_small">12sp</dimen>
 
     <!-- RatingView -->
@@ -32,48 +34,35 @@
     <dimen name="rating_interval">1dp</dimen>
 
     <!-- 4dp - 4dp, 4dp for card padding -->
-    <dimen name="gallery_list_interval">0dp</dimen>
+    <dimen name="gallery_list_interval">12dp</dimen>
     <!-- 8dp - 4dp, 4dp for card padding -->
-    <dimen name="gallery_list_margin_h">4dp</dimen>
+    <dimen name="gallery_list_margin_h">12dp</dimen>
     <!-- 8dp - 4dp, 4dp for card padding -->
     <dimen name="gallery_list_margin_v">4dp</dimen>
 
     <!-- 4dp - 4dp, 4dp for card padding -->
-    <dimen name="gallery_grid_interval">0dp</dimen>
+    <dimen name="gallery_grid_interval">4dp</dimen>
     <!-- 8dp - 4dp, 4dp for card padding -->
-    <dimen name="gallery_grid_margin_h">4dp</dimen>
+    <dimen name="gallery_grid_margin_h">12dp</dimen>
     <!-- 8dp - 4dp, 4dp for card padding -->
     <dimen name="gallery_grid_margin_v">4dp</dimen>
 
     <!-- 8dp - 4dp, 4dp for card padding -->
-    <dimen name="gallery_search_bar_margin_h">6dp</dimen>
     <!-- 12dp - 4dp, 4dp for card padding -->
-    <dimen name="gallery_search_bar_margin_v">8dp</dimen>
+    <dimen name="gallery_search_bar_margin_v">10dp</dimen>
 
     <dimen name="gallery_padding_top_search_bar">64dp</dimen>
-    <dimen name="gallery_padding_bottom_fab">80dp</dimen>
 
     <dimen name="gallery_list_column_width_long">480dp</dimen>
     <dimen name="gallery_list_column_width_short">320dp</dimen>
 
-    <dimen name="gallery_grid_column_width_large">160dp</dimen>
-    <dimen name="gallery_grid_column_width_middle">120dp</dimen>
-    <dimen name="gallery_grid_column_width_small">80dp</dimen>
-
     <!-- 4dp - 4dp, 4dp for card padding -->
-    <dimen name="search_layout_interval">0dp</dimen>
     <!-- 8dp - 4dp, 4dp for card padding -->
     <dimen name="search_layout_margin_h">4dp</dimen>
     <!-- 8dp - 4dp, 4dp for card padding -->
     <dimen name="search_layout_margin_v">4dp</dimen>
 
     <!-- DrawerArrowDrawable -->
-    <dimen name="dad_drawable_size">24dp</dimen>
-    <dimen name="dad_bar_size">18dp</dimen>
-    <dimen name="dad_top_bottom_bar_arrow_size">11.31dp</dimen>
-    <dimen name="dad_thickness">2dp</dimen>
-    <dimen name="dad_gap_between_bars">3dp</dimen>
-    <dimen name="dad_middle_bar_arrow_size">16dp</dimen>
 
     <!-- AddDeleteDrawable -->
     <dimen name="add_size">20dp</dimen>
@@ -82,15 +71,15 @@
     <!-- CategoryTable -->
 
     <!-- AdvanceSearchTable -->
-    <dimen name="advance_search_table_item_margin">4dp</dimen>
 
     <!-- Search item -->
-    <dimen name="search_item_interval">8dp</dimen>
     <dimen name="search_category_padding_h">@dimen/keyline_margin</dimen>
     <dimen name="search_category_padding_v">@dimen/keyline_margin</dimen>
-    <dimen name="search_category_title_height">48dp</dimen>
+    <dimen name="search_category_title_height">24dp</dimen>
 
     <dimen name="image_search_max_size">240dp</dimen>
+
+    <dimen name="strip_item_padding_v">@dimen/strip_item_padding</dimen>
 
     <!-- Switch padding -->
 
@@ -100,31 +89,22 @@
     <dimen name="fab_size">56dp</dimen>
     <dimen name="fab_min_size">40dp</dimen>
 
+    <dimen name="fab_rv_padding_size">80dp</dimen>
+
     <!-- Slider -->
-    <dimen name="slider_bubble_width">26dp</dimen>
-    <dimen name="slider_bubble_height">32dp</dimen>
 
     <dimen name="corner_fab_margin">16dp</dimen>
 
     <dimen name="gallery_detail_thumb_width">128dp</dimen>
     <dimen name="gallery_detail_thumb_height">192dp</dimen>
 
-    <dimen name="gallery_widget_margin_h">12dp</dimen>
-    <dimen name="gallery_widget_margin_v">12dp</dimen>
-
-    <dimen name="gallery_guide_divider_width">3dp</dimen>
-
     <!-- Lock pattern view -->
 
     <!-- Custom preference -->
 
     <!-- Gallery -->
-    <dimen name="gallery_pager_interval">48dp</dimen>
-    <dimen name="gallery_scroll_interval">28dp</dimen>
-    <dimen name="gallery_page_min_height">256dp</dimen>
-    <dimen name="gallery_page_info_interval">24dp</dimen>
-    <dimen name="gallery_progress_size">56dp</dimen>
-    <dimen name="gallery_page_text_size">56sp</dimen>
-    <dimen name="gallery_error_text_size">24sp</dimen>
+
+    <dimen name="bottom_sheet_width">0dp</dimen>
+    <dimen name="screen_edge_margin">16dp</dimen>
 
 </resources>

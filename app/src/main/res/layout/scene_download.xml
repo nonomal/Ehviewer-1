@@ -14,30 +14,30 @@
   ~ limitations under the License.
   -->
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <FrameLayout
         android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <com.hippo.easyrecyclerview.EasyRecyclerView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingHorizontal="@dimen/gallery_list_margin_h"
+            android:paddingVertical="@dimen/gallery_list_margin_v"
             app:fitsSystemWindowsInsets="bottom" />
 
-        <com.hippo.easyrecyclerview.FastScroller
+        <com.hippo.ehviewer.ui.legacy.FastScroller
             android:id="@+id/fast_scroller"
             android:layout_width="30dp"
             android:layout_height="match_parent"
-            android:layout_gravity="right"
-            android:paddingLeft="20dp"
-            android:paddingTop="8dp"
-            android:paddingRight="4dp"
+            android:layout_gravity="end"
+            android:paddingStart="20dp"
+            android:paddingEnd="4dp"
             android:paddingBottom="8dp"
             app:fitsSystemWindowsInsets="bottom" />
 
@@ -53,11 +53,11 @@
         android:gravity="center_horizontal"
         android:text="@string/no_download_info" />
 
-    <com.hippo.widget.FabLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    <com.hippo.ehviewer.ui.legacy.FabLayout
         android:id="@+id/fab_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingRight="@dimen/corner_fab_margin"
+        android:paddingEnd="@dimen/corner_fab_margin"
         android:paddingBottom="@dimen/corner_fab_margin"
         app:fitsSystemWindowsInsets="bottom">
 
@@ -96,6 +96,6 @@
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/v_close_dark_x24" />
 
-    </com.hippo.widget.FabLayout>
+    </com.hippo.ehviewer.ui.legacy.FabLayout>
 
-</FrameLayout>
+</merge>

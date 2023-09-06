@@ -1,20 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright 2016 Hippo Seven
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
--->
-
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature
         android:name="android.software.leanback"
@@ -26,42 +12,48 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-
-    <uses-feature
-        android:glEsVersion="0x00020000"
-        android:required="true" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
-        android:name="com.hippo.ehviewer.EhApplication"
+        android:name=".EhApplication"
         android:allowBackup="true"
         android:appCategory="image"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_scheme"
         android:hasFragileUserData="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:largeHeap="true"
-        android:localeConfig="@xml/locales_config"
+        android:localeConfig="@xml/locale_config"
         android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@style/AppTheme">
-
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:targetApi="tiramisu">
         <activity
-            android:name="com.hippo.ehviewer.ui.MainActivity"
+            android:name=".ui.ConfigureActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.MainActivity"
             android:banner="@mipmap/ic_leanback_banner"
             android:configChanges="screenSize"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize|stateAlwaysHidden">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
@@ -79,29 +71,27 @@
                 <data android:scheme="https" />
                 <data android:host="exhentai.org" />
                 <data android:host="e-hentai.org" />
-                <data android:host="g.e-hentai.org" />
-                <data android:host="lofi.e-hentai.org" />
             </intent-filter>
-
             <intent-filter android:label="@string/keyword_search">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="text/plain" />
             </intent-filter>
-
             <intent-filter android:label="@string/image_search">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
-
         <activity
-            android:name="com.hippo.ehviewer.ui.GalleryActivity"
+            android:name="eu.kanade.tachiyomi.ui.reader.ReaderActivity"
             android:configChanges="screenSize"
             android:exported="true"
             android:launchMode="singleTask">
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -135,28 +125,29 @@
                 <data android:mimeType="application/x-xz-compressed-tar" />
             </intent-filter>
         </activity>
-
         <activity
-            android:name="com.hippo.ehviewer.ui.SettingsActivity"
+            android:name=".ui.SecurityActivity"
             android:configChanges="screenSize"
-            android:label="@string/settings"
-            android:theme="@style/AppTheme" />
-
+            android:label="@string/settings" />
         <activity
-            android:name="com.hippo.ehviewer.ui.SecurityActivity"
-            android:configChanges="screenSize"
-            android:label="@string/settings"
-            android:theme="@style/AppTheme" />
-
-        <activity
-            android:name="com.hippo.ehviewer.shortcuts.ShortcutsActivity"
+            android:name=".shortcuts.ShortcutsActivity"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".ui.WebViewActivity" />
 
         <service
-            android:name="com.hippo.ehviewer.download.DownloadService"
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+        <service
+            android:name=".download.DownloadService"
             android:foregroundServiceType="dataSync"
             android:label="@string/download_service_label" />
 
@@ -165,11 +156,10 @@
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
-
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
-
         </provider>
     </application>
+
 </manifest>

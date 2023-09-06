@@ -6,12 +6,12 @@
   <a href="https://github.com/Ehviewer-Overhauled/Ehviewer/blob/1.8.x.x/docs/README/zh-cn.md">
   简体中文
   </a>
-  <span> | <span>
-  <strong>正體中文<strong>
+  <span> | </span>
+  <strong>正體中文</strong>
 </p>
 
 <h1 align="center">
-  <img src="../../art/launcher_icon-web.svg" width="200">
+  <img src="https://github.com/Ehviewer-Overhauled/Art/blob/master/launcher_icon-web.svg" width="200">
   <br>EhViewer<br>
 </h1>
 
@@ -57,7 +57,6 @@
   </h3>
 </div>
 
-
 # 說明
 
 致力於輕量化與良好性能表現的 EhViewer 分支
@@ -66,36 +65,34 @@
 
 # 下載
 
-<a href="https://github.com/Ehviewer-Overhauled/Ehviewer/releases"><img alt="Get it on GitHub" src="../../art/get-it-on-github.svg" width="200px"/></a> <a href="https://github.com/Ehviewer-Overhauled/fdroid-repo"><img alt="Git it on F-Droid" src="../../art/get-it-on-fdroid.svg" width="200px"/></a>
-
-App 分為 1.8 與 1.7 兩個版本。1.8 版本適配 Android 12 及以上系統，為開發主線；1.7 版本適配 Android 11 及以下版本，削減了 Android 12 及以上系統的獨有功能，使其能在低版本 Android 上正常工作
+<a href="https://github.com/Ehviewer-Overhauled/Ehviewer/releases"><img alt="Get it on GitHub" src="https://github.com/Ehviewer-Overhauled/Art/blob/master/get-it-on-github.svg" width="200px"/></a> <a href="https://github.com/Ehviewer-Overhauled/fdroid-repo"><img alt="Get it on F-Droid" src="https://github.com/Ehviewer-Overhauled/Art/blob/master/get-it-on-fdroid.svg" width="200px"/></a>
 
 # 截圖
 
-![screenshot-01](../../art/screenshot-01.png)
-![screenshot-02](../../art/screenshot-02.png)
+![screenshot-01](https://github.com/Ehviewer-Overhauled/Art/blob/master/screenshot-01.png)
+![screenshot-02](https://github.com/Ehviewer-Overhauled/Art/blob/master/screenshot-02.png)
 
 # 感謝
 
 本項目受到了諸多開源項目的幫助
 
+- [Arrow](https://arrow-kt.io/)
 - [AOSP & AndroidX](http://source.android.com/)
+- [Kotlin & KotlinX](https://kotlinlang.org/)
 - [FullDraggableDrawer](https://github.com/PureWriter/FullDraggableDrawer)
-- [GnuTLS](https://gnutls.org/)
-- [material-components-android](https://github.com/material-components/material-components-android)
+- [MCA](https://github.com/material-components/material-components-android)
 - [material-design-icons](https://github.com/google/material-design-icons)
-- [jsoup](https://github.com/jhy/jsoup)
-- [okhttp](https://github.com/square/okhttp)
+- [Okhttp](https://square.github.io/okhttp/)
 - [RikkaX](https://github.com/RikkaApps/RikkaX)
-- [libarchive](http://www.libarchive.org/)
-- [XZ Utils](https://tukaani.org/xz/)
-
+- [Libarchive](http://www.libarchive.org/)
+- [Coil](https://coil-kt.github.io/coil/)
+- [Jsoup](https://jsoup.org/)
 
 # 許可證書
 
     Copyright 2014-2019 Hippo Seven
     Copyright 2020-2022 NekoInverter
-    Copyright 2022 Tarsin Norbin
+    Copyright 2022-2023 Tarsin Norbin
 
     EhViewer is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

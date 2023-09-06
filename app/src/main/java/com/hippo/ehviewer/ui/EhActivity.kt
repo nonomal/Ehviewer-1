@@ -15,142 +15,46 @@
  */
 package com.hippo.ehviewer.ui
 
-import android.Manifest
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.content.res.Configuration
-import android.content.res.Resources
 import android.content.res.Resources.Theme
-import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.EhApplication.locked_last_leave_time
+import androidx.navigation.ActivityNavigator
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.ui.SecurityActivity.Companion.isAuthenticationSupported
-import rikka.core.res.resolveColor
+import eu.kanade.tachiyomi.util.system.isNightMode
+import eu.kanade.tachiyomi.util.view.setSecureScreen
 import rikka.insets.WindowInsetsHelper
 import rikka.layoutinflater.view.LayoutInflaterFactory
 
 abstract class EhActivity : AppCompatActivity() {
     @StyleRes
-    fun getThemeStyleRes(context: Context): Int {
-        return if (THEME_BLACK == getTheme(context)) {
-            R.style.ThemeOverlay_Black
-        } else R.style.ThemeOverlay
+    fun getThemeStyleRes(): Int {
+        return if (Settings.blackDarkTheme && isNightMode()) R.style.ThemeOverlay_Black else R.style.ThemeOverlay
     }
 
     override fun onApplyThemeResource(theme: Theme, resid: Int, first: Boolean) {
-        if (parent == null) {
-            theme.applyStyle(resid, true)
-        } else {
-            try {
-                theme.setTo(parent.theme)
-            } catch (ignored: Exception) {
-            }
-            theme.applyStyle(resid, false)
-        }
-        theme.applyStyle(getThemeStyleRes(this), true)
-        super.onApplyThemeResource(theme, R.style.ThemeOverlay, first)
+        theme.applyStyle(resid, true)
+        theme.applyStyle(getThemeStyleRes(), true)
     }
 
     override fun onNightModeChanged(mode: Int) {
-        theme.applyStyle(getThemeStyleRes(this), true)
+        theme.applyStyle(getThemeStyleRes(), true)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        layoutInflater.factory2 =
-            LayoutInflaterFactory(delegate).addOnViewCreatedListener(
-                WindowInsetsHelper.LISTENER
-            )
+        layoutInflater.factory2 = LayoutInflaterFactory(delegate).addOnViewCreatedListener(WindowInsetsHelper.LISTENER)
         super.onCreate(savedInstanceState)
-        val window = window
-        window.statusBarColor = Color.TRANSPARENT
-        window.decorView.post {
-            val rootWindowInsets = window.decorView.rootWindowInsets
-            if (rootWindowInsets != null && rootWindowInsets.systemWindowInsetBottom >= Resources.getSystem().displayMetrics.density * 40) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    window.navigationBarDividerColor = getColor(R.color.navigation_bar_divider)
-                }
-                window.navigationBarColor =
-                    theme.resolveColor(android.R.attr.navigationBarColor) and 0x00ffffff or -0x20000000
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    window.isNavigationBarContrastEnforced = false
-                }
-            } else {
-                window.navigationBarColor = Color.TRANSPARENT
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    window.isNavigationBarContrastEnforced = true
-                }
-            }
-        }
-        (application as EhApplication).registerActivity(this)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        (application as EhApplication).unregisterActivity(this)
     }
 
     override fun onResume() {
-        val locked_resume_time = System.currentTimeMillis() / 1000
-        val locked_delay_time = locked_resume_time - locked_last_leave_time
-        if (Settings.getSecurity() && locked_delay_time >= Settings.getSecurityDelay() * 60
-            && isAuthenticationSupported(this) && EhApplication.locked
-        ) {
-            startActivity(Intent(this, SecurityActivity::class.java))
-        }
+        interceptSecurityOrReturn()
         super.onResume()
-        if (Settings.getEnabledSecurity()) {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        window.setSecureScreen(Settings.enabledSecurity)
     }
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {
-        Settings.putNotificationRequired()
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    fun checkAndRequestNotificationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        if (Settings.getNotificationRequired())
-            return
-        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    companion object {
-        private const val THEME_DEFAULT = "DEFAULT"
-        private const val THEME_BLACK = "BLACK"
-        private val isBlackNightTheme: Boolean
-            get() = Settings.getBoolean("black_dark_theme", false)
-
-        fun getTheme(context: Context): String {
-            return if (isBlackNightTheme && isNightMode(context.resources.configuration)) THEME_BLACK else THEME_DEFAULT
-        }
-
-        private fun isNightMode(configuration: Configuration): Boolean {
-            return configuration.uiMode and Configuration.UI_MODE_NIGHT_YES > 0
-        }
+    override fun finish() {
+        super.finish()
+        ActivityNavigator.applyPopAnimationsToPendingTransition(this)
     }
 }

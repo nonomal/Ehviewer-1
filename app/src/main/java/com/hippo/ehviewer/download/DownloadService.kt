@@ -21,32 +21,36 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.IntDef
+import androidx.collection.LongSparseArray
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.BaseGalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.DownloadsScene
-import com.hippo.scene.StageActivity
-import com.hippo.util.ReadableTime
-import com.hippo.yorozuya.FileUtils
-import com.hippo.yorozuya.SimpleHandler
-import com.hippo.yorozuya.collect.LongList
-import com.hippo.yorozuya.collect.SparseJBArray
-import com.hippo.yorozuya.collect.SparseJLArray
+import com.hippo.ehviewer.util.FileUtils
+import com.hippo.ehviewer.util.LongList
+import com.hippo.ehviewer.util.ReadableTime
+import com.hippo.ehviewer.util.SimpleHandler
+import com.hippo.ehviewer.util.getParcelableExtraCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
-class DownloadService : Service(), DownloadManager.DownloadListener {
+class DownloadService : Service(), DownloadManager.DownloadListener, CoroutineScope {
+    override val coroutineContext = Dispatchers.IO + SupervisorJob()
+    private val deferredMgr = async { DownloadManager.apply { setDownloadListener(this@DownloadService) } }
     private var mNotifyManager: NotificationManagerCompat? = null
-    private var mDownloadManager: DownloadManager? = null
     private var mDownloadingBuilder: NotificationCompat.Builder? = null
     private var mDownloadedBuilder: NotificationCompat.Builder? = null
     private var m509dBuilder: NotificationCompat.Builder? = null
@@ -60,15 +64,9 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
         mChannelID = "$packageName.download"
         mNotifyManager = NotificationManagerCompat.from(this)
         mNotifyManager!!.createNotificationChannel(
-            NotificationChannelCompat.Builder(
-                mChannelID!!,
-                NotificationManagerCompat.IMPORTANCE_LOW
-            )
-                .setName(getString(R.string.download_service))
-                .build()
+            NotificationChannelCompat.Builder(mChannelID!!, NotificationManagerCompat.IMPORTANCE_LOW)
+                .setName(getString(R.string.download_service)).build(),
         )
-        mDownloadManager = EhApplication.getDownloadManager(applicationContext)
-        mDownloadManager!!.setDownloadListener(this)
         ensureDownloadingBuilder()
         mDownloadingBuilder!!.setContentTitle(getString(R.string.download_service))
             .setContentText(null)
@@ -79,78 +77,83 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        mNotifyManager = null
-        if (mDownloadManager != null) {
-            mDownloadManager!!.setDownloadListener(null)
-            mDownloadManager = null
+        val scope = this
+        launch {
+            deferredMgr.await().setDownloadListener(null)
+            scope.cancel()
         }
+        mNotifyManager = null
         mDownloadingBuilder = null
         mDownloadedBuilder = null
         m509dBuilder = null
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        handleIntent(intent)
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        launch { handleIntent(intent) }
         return START_STICKY
     }
 
-    private fun handleIntent(intent: Intent?) {
-        var action: String? = null
-        if (intent != null) {
-            action = intent.action
-        }
-        if (ACTION_START == action) {
-            val gi = intent!!.getParcelableExtra<GalleryInfo>(KEY_GALLERY_INFO)
-            val label = intent.getStringExtra(KEY_LABEL)
-            if (gi != null && mDownloadManager != null) {
-                mDownloadManager!!.startDownload(gi, label)
+    private suspend fun handleIntent(intent: Intent?) {
+        when (intent?.action) {
+            ACTION_START -> {
+                val gi = intent.getParcelableExtraCompat<BaseGalleryInfo>(KEY_GALLERY_INFO)
+                val label = intent.getStringExtra(KEY_LABEL)
+                if (gi != null) {
+                    deferredMgr.await().startDownload(gi, label)
+                }
             }
-        } else if (ACTION_START_RANGE == action) {
-            val gidList = intent!!.getParcelableExtra<LongList>(KEY_GID_LIST)
-            if (gidList != null && mDownloadManager != null) {
-                mDownloadManager!!.startRangeDownload(gidList)
+
+            ACTION_START_RANGE -> {
+                val gidList = intent.getParcelableExtraCompat<LongList>(KEY_GID_LIST)
+                if (gidList != null) {
+                    deferredMgr.await().startRangeDownload(gidList)
+                }
             }
-        } else if (ACTION_START_ALL == action) {
-            if (mDownloadManager != null) {
-                mDownloadManager!!.startAllDownload()
+
+            ACTION_START_ALL -> {
+                deferredMgr.await().startAllDownload()
             }
-        } else if (ACTION_STOP == action) {
-            val gid = intent!!.getLongExtra(KEY_GID, -1)
-            if (gid != -1L && mDownloadManager != null) {
-                mDownloadManager!!.stopDownload(gid)
+
+            ACTION_STOP -> {
+                val gid = intent.getLongExtra(KEY_GID, -1)
+                if (gid != -1L) {
+                    deferredMgr.await().stopDownload(gid)
+                }
             }
-        } else if (ACTION_STOP_CURRENT == action) {
-            if (mDownloadManager != null) {
-                mDownloadManager!!.stopCurrentDownload()
+
+            ACTION_STOP_CURRENT -> deferredMgr.await().stopCurrentDownload()
+
+            ACTION_STOP_RANGE -> {
+                val gidList = intent.getParcelableExtraCompat<LongList>(KEY_GID_LIST)
+                if (gidList != null) {
+                    deferredMgr.await().stopRangeDownload(gidList)
+                }
             }
-        } else if (ACTION_STOP_RANGE == action) {
-            val gidList = intent!!.getParcelableExtra<LongList>(KEY_GID_LIST)
-            if (gidList != null && mDownloadManager != null) {
-                mDownloadManager!!.stopRangeDownload(gidList)
+
+            ACTION_STOP_ALL -> deferredMgr.await().stopAllDownload()
+
+            ACTION_DELETE -> {
+                val gid = intent.getLongExtra(KEY_GID, -1)
+                if (gid != -1L) {
+                    deferredMgr.await().deleteDownload(gid)
+                }
             }
-        } else if (ACTION_STOP_ALL == action) {
-            if (mDownloadManager != null) {
-                mDownloadManager!!.stopAllDownload()
+
+            ACTION_DELETE_RANGE -> {
+                val gidList = intent.getParcelableExtraCompat<LongList>(KEY_GID_LIST)
+                if (gidList != null) {
+                    deferredMgr.await().deleteRangeDownload(gidList)
+                }
             }
-        } else if (ACTION_DELETE == action) {
-            val gid = intent!!.getLongExtra(KEY_GID, -1)
-            if (gid != -1L && mDownloadManager != null) {
-                mDownloadManager!!.deleteDownload(gid)
+
+            ACTION_CLEAR -> {
+                clear()
             }
-        } else if (ACTION_DELETE_RANGE == action) {
-            val gidList = intent!!.getParcelableExtra<LongList>(KEY_GID_LIST)
-            if (gidList != null && mDownloadManager != null) {
-                mDownloadManager!!.deleteRangeDownload(gidList)
-            }
-        } else if (ACTION_CLEAR == action) {
-            clear()
         }
         checkStopSelf()
     }
 
-    override fun onBind(intent: Intent): IBinder? {
-        throw IllegalStateException("No bindService")
-    }
+    override fun onBind(intent: Intent) = error("No bindService")
 
     private fun ensureDownloadingBuilder() {
         if (mDownloadingBuilder != null) {
@@ -168,7 +171,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
             .addAction(
                 R.drawable.v_pause_x24,
                 getString(R.string.stat_download_action_stop_all),
-                piStopAll
+                piStopAll,
             )
             .setShowWhen(false)
             .setChannelId(mChannelID!!)
@@ -186,12 +189,13 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
         val bundle = Bundle()
         bundle.putString(DownloadsScene.KEY_ACTION, DownloadsScene.ACTION_CLEAR_DOWNLOAD_SERVICE)
         val activityIntent = Intent(this, MainActivity::class.java)
-        activityIntent.action = StageActivity.ACTION_START_SCENE
-        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, DownloadsScene::class.java.name)
-        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle)
+        activityIntent.action = ACTION_START_DOWNLOADSCENE
+        activityIntent.putExtra(ACTION_START_DOWNLOADSCENE_ARGS, bundle)
         val piActivity = PendingIntent.getActivity(
-            this@DownloadService, 0,
-            activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this@DownloadService,
+            0,
+            activityIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         mDownloadedBuilder = NotificationCompat.Builder(applicationContext, mChannelID!!)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
@@ -213,7 +217,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
             .setContentText(getString(R.string.stat_509_alert_title))
             .setContentText(getString(R.string.stat_509_alert_text))
             .setStyle(
-                NotificationCompat.BigTextStyle().bigText(getString(R.string.stat_509_alert_text))
+                NotificationCompat.BigTextStyle().bigText(getString(R.string.stat_509_alert_text)),
             )
             .setAutoCancel(true)
             .setOngoing(false)
@@ -222,15 +226,15 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
     }
 
     override fun onGet509() {
-        if (mDownloadManager != null) {
-            mDownloadManager!!.stopAllDownload()
+        launch {
+            deferredMgr.await().stopAllDownload()
+            if (mNotifyManager == null) {
+                return@launch
+            }
+            ensure509Builder()
+            m509dBuilder!!.setWhen(System.currentTimeMillis())
+            m509Delay!!.show()
         }
-        if (mNotifyManager == null) {
-            return
-        }
-        ensure509Builder()
-        m509dBuilder!!.setWhen(System.currentTimeMillis())
-        m509Delay!!.show()
     }
 
     override fun onStart(info: DownloadInfo) {
@@ -241,12 +245,13 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
         val bundle = Bundle()
         bundle.putLong(DownloadsScene.KEY_GID, info.gid)
         val activityIntent = Intent(this, MainActivity::class.java)
-        activityIntent.action = StageActivity.ACTION_START_SCENE
-        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, DownloadsScene::class.java.name)
-        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle)
+        activityIntent.action = ACTION_START_DOWNLOADSCENE
+        activityIntent.putExtra(ACTION_START_DOWNLOADSCENE_ARGS, bundle)
         val piActivity = PendingIntent.getActivity(
-            this@DownloadService, 0,
-            activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this@DownloadService,
+            0,
+            activityIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         mDownloadingBuilder!!.setContentTitle(EhUtils.getSuitableTitle(info))
             .setContentText(null)
@@ -271,7 +276,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
             getString(
                 R.string.download_speed_text_2,
                 text,
-                ReadableTime.getShortTimeInterval(remaining)
+                ReadableTime.getShortTimeInterval(remaining),
             )
         } else {
             getString(R.string.download_speed_text, text)
@@ -331,7 +336,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                 text = if (sItemTitleArray.size() >= 1) {
                     getString(
                         R.string.stat_download_done_line_succeeded,
-                        sItemTitleArray.valueAt(0)
+                        sItemTitleArray.valueAt(0),
                     )
                 } else {
                     Log.d("TAG", "WTF, sItemTitleArray is null")
@@ -347,7 +352,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                 text = if (sItemTitleArray.size() >= 1) {
                     getString(
                         R.string.stat_download_done_line_failed,
-                        sItemTitleArray.valueAt(0)
+                        sItemTitleArray.valueAt(0),
                     )
                 } else {
                     Log.d("TAG", "WTF, sItemTitleArray is null")
@@ -380,8 +385,8 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                 style.addLine(
                     getString(
                         if (fin) R.string.stat_download_done_line_succeeded else R.string.stat_download_done_line_failed,
-                        title
-                    )
+                        title,
+                    ),
                 )
                 i++
             }
@@ -407,9 +412,11 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
     }
 
     private fun checkStopSelf() {
-        if (mDownloadManager == null || mDownloadManager!!.isIdle) {
-            stopForeground(true)
-            stopSelf()
+        launch {
+            if (deferredMgr.await().isIdle) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
         }
     }
 
@@ -417,7 +424,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
         private var mService: Service,
         private val mNotifyManager: NotificationManagerCompat,
         private val mBuilder: NotificationCompat.Builder,
-        private val mId: Int
+        private val mId: Int,
     ) : Runnable {
         private var mLastTime: Long = 0
         private var mPosted = false
@@ -435,7 +442,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                     // Wait long enough, do it now
                     if (ActivityCompat.checkSelfPermission(
                             mService,
-                            Manifest.permission.POST_NOTIFICATIONS
+                            Manifest.permission.POST_NOTIFICATIONS,
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         return
@@ -445,7 +452,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                     // Too quick, post delay
                     mOps = OPS_NOTIFY
                     mPosted = true
-                    SimpleHandler.getInstance().postDelayed(this, DELAY)
+                    SimpleHandler.postDelayed(this, DELAY)
                 }
                 mLastTime = now
             }
@@ -463,7 +470,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                     // Too quick, post delay
                     mOps = OPS_CANCEL
                     mPosted = true
-                    SimpleHandler.getInstance().postDelayed(this, DELAY)
+                    SimpleHandler.postDelayed(this, DELAY)
                 }
             }
         }
@@ -480,7 +487,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                     // Too quick, post delay
                     mOps = OPS_START_FOREGROUND
                     mPosted = true
-                    SimpleHandler.getInstance().postDelayed(this, DELAY)
+                    SimpleHandler.postDelayed(this, DELAY)
                 }
             }
         }
@@ -491,13 +498,14 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                 OPS_NOTIFY -> {
                     if (ActivityCompat.checkSelfPermission(
                             mService,
-                            Manifest.permission.POST_NOTIFICATIONS
+                            Manifest.permission.POST_NOTIFICATIONS,
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         return
                     }
                     mNotifyManager.notify(mId, mBuilder.build())
                 }
+
                 OPS_CANCEL -> mNotifyManager.cancel(mId)
                 OPS_START_FOREGROUND -> mService.startForeground(mId, mBuilder.build())
             }
@@ -515,6 +523,9 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
     }
 
     companion object {
+        const val ACTION_START_DOWNLOADSCENE = "start_download_scene"
+        const val ACTION_START_DOWNLOADSCENE_ARGS = "start_download_scene_args"
+
         const val ACTION_START = "start"
         const val ACTION_START_RANGE = "start_range"
         const val ACTION_START_ALL = "start_all"
@@ -532,13 +543,12 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
         private const val ID_DOWNLOADING = 1
         private const val ID_DOWNLOADED = 2
         private const val ID_509 = 3
-        private val sItemStateArray = SparseJBArray()
-        private val sItemTitleArray = SparseJLArray<String>()
+        private val sItemStateArray = LongSparseArray<Boolean>()
+        private val sItemTitleArray = LongSparseArray<String>()
         private var sFailedCount = 0
         private var sFinishedCount = 0
         private var sDownloadedCount = 0
 
-        @JvmStatic
         fun clear() {
             sFailedCount = 0
             sFinishedCount = 0

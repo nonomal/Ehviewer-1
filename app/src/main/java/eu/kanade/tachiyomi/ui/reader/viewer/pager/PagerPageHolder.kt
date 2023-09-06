@@ -1,0 +1,210 @@
+package eu.kanade.tachiyomi.ui.reader.viewer.pager
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.drawable.Animatable
+import android.graphics.drawable.Drawable
+import android.view.LayoutInflater
+import androidx.core.view.isVisible
+import com.hippo.ehviewer.databinding.ReaderErrorBinding
+import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
+import eu.kanade.tachiyomi.ui.reader.viewer.ReaderPageImageView
+import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
+import eu.kanade.tachiyomi.widget.ViewPagerAdapter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+/**
+ * View of the ViewPager that contains a page of a chapter.
+ */
+@SuppressLint("ViewConstructor")
+class PagerPageHolder(
+    readerThemedContext: Context,
+    val viewer: PagerViewer,
+    val page: ReaderPage,
+) : ReaderPageImageView(readerThemedContext), ViewPagerAdapter.PositionableView {
+
+    /**
+     * Item that identifies this view. Needed by the adapter to not recreate views.
+     */
+    override val item
+        get() = page
+
+    /**
+     * Loading progress bar to indicate the current progress.
+     */
+    private val progressIndicator = ReaderProgressIndicator(readerThemedContext)
+
+    /**
+     * Error layout to show when the image fails to load.
+     */
+    private var errorLayout: ReaderErrorBinding? = null
+
+    private val scope = CoroutineScope(Dispatchers.IO)
+
+    /**
+     * Subscription for status changes of the page.
+     */
+    private var statusJob: Job? = null
+
+    /**
+     * Job for progress changes of the page.
+     */
+    private var progressJob: Job? = null
+
+    init {
+        addView(progressIndicator)
+        statusJob = scope.launch(Dispatchers.Main) {
+            page.status.collectLatest {
+                processStatus(it)
+            }
+        }
+    }
+
+    /**
+     * Called when this view is detached from the window. Unsubscribes any active subscription.
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        cancelProgressJob()
+        unsubscribeStatus()
+    }
+
+    private fun launchProgressJob() {
+        progressJob?.cancel()
+        progressJob = scope.launch(Dispatchers.Main) {
+            page.progressFlow.collectLatest { value -> progressIndicator.setProgress(value) }
+        }
+    }
+
+    /**
+     * Called when the status of the page changes.
+     *
+     * @param status the new status of the page.
+     */
+    private fun processStatus(status: Page.State) {
+        when (status) {
+            Page.State.QUEUE -> setQueued()
+            Page.State.LOAD_PAGE -> setLoading()
+            Page.State.DOWNLOAD_IMAGE -> {
+                launchProgressJob()
+                setDownloading()
+            }
+            Page.State.READY -> {
+                page.image?.mObtainedDrawable?.let { setImage(it) }
+                cancelProgressJob()
+            }
+            Page.State.ERROR -> {
+                setError()
+                cancelProgressJob()
+            }
+        }
+    }
+
+    /**
+     * Unsubscribes from the status subscription.
+     */
+    private fun unsubscribeStatus() {
+        statusJob?.cancel()
+        statusJob = null
+    }
+
+    private fun cancelProgressJob() {
+        progressJob?.cancel()
+        progressJob = null
+    }
+
+    /**
+     * Called when the page is queued.
+     */
+    private fun setQueued() {
+        progressIndicator.show()
+        errorLayout?.root?.isVisible = false
+        recycle()
+    }
+
+    /**
+     * Called when the page is loading.
+     */
+    private fun setLoading() {
+        progressIndicator.show()
+        errorLayout?.root?.isVisible = false
+    }
+
+    /**
+     * Called when the page is downloading.
+     */
+    private fun setDownloading() {
+        progressIndicator.show()
+        errorLayout?.root?.isVisible = false
+    }
+
+    /**
+     * Called when the page is ready.
+     */
+    private fun setImage(drawable: Drawable) {
+        progressIndicator.setProgress(0)
+        errorLayout?.root?.isVisible = false
+        setImage(
+            drawable,
+            Config(
+                zoomDuration = viewer.config.doubleTapAnimDuration,
+                minimumScaleType = viewer.config.imageScaleType,
+                cropBorders = viewer.config.imageCropBorders,
+                zoomStartPosition = viewer.config.imageZoomType,
+                landscapeZoom = viewer.config.landscapeZoom,
+            ),
+        )
+        if (drawable !is Animatable) {
+            pageBackground = background
+        }
+    }
+
+    /**
+     * Called when the page has an error.
+     */
+    private fun setError() {
+        progressIndicator.hide()
+        showErrorLayout()
+    }
+
+    override fun onImageLoaded() {
+        super.onImageLoaded()
+        progressIndicator.hide()
+    }
+
+    /**
+     * Called when an image fails to decode.
+     */
+    override fun onImageLoadError() {
+        super.onImageLoadError()
+        progressIndicator.hide()
+        showErrorLayout()
+    }
+
+    /**
+     * Called when an image is zoomed in/out.
+     */
+    override fun onScaleChanged(newScale: Float) {
+        super.onScaleChanged(newScale)
+        viewer.activity.hideMenu()
+    }
+
+    private fun showErrorLayout(): ReaderErrorBinding {
+        if (errorLayout == null) {
+            errorLayout = ReaderErrorBinding.inflate(LayoutInflater.from(context), this, true)
+            errorLayout?.actionRetry?.viewer = viewer
+            errorLayout?.actionRetry?.setOnClickListener {
+                viewer.activity.mGalleryProvider?.retryPage(page.index)
+            }
+        }
+        page.errorMsg?.let { errorLayout!!.errorMessage.text = it }
+        errorLayout?.root?.isVisible = true
+        return errorLayout!!
+    }
+}

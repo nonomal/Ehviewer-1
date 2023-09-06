@@ -14,27 +14,26 @@
   ~ limitations under the License.
   -->
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    <androidx.swiperefreshlayout.widget.ThemedSwipeRefreshLayout
         android:id="@+id/refresh_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <com.hippo.easyrecyclerview.EasyRecyclerView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingLeft="@dimen/keyline_margin"
             android:paddingRight="@dimen/keyline_margin"
+            android:paddingBottom="@dimen/fab_rv_padding_size"
             app:fitsSystemWindowsInsets="bottom" />
 
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </androidx.swiperefreshlayout.widget.ThemedSwipeRefreshLayout>
 
     <TextView
         android:id="@+id/tip"
@@ -47,48 +46,55 @@
         android:text="@string/no_one_comments_gallery"
         app:fitsSystemWindowsInsets="bottom" />
 
-    <LinearLayout
-        android:id="@+id/edit_panel"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="?attr/colorPrimaryContainer"
-        android:elevation="4dp"
-        android:orientation="horizontal"
-        android:visibility="invisible"
-        app:fitsSystemWindowsInsets="bottom">
+        android:layout_height="match_parent">
 
-        <EditText
-            android:id="@+id/edit_text"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:id="@+id/edit_panel"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@null"
-            android:gravity="left|center_vertical"
-            android:inputType="textMultiLine"
-            android:maxHeight="112dp"
-            android:minHeight="56dp"
-            android:padding="@dimen/keyline_margin"
-            android:textColor="?colorOnPrimarySurface" />
-
-        <ImageView
-            android:id="@+id/send"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
             android:layout_gravity="bottom"
-            android:background="?selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:padding="16dp"
-            app:tint="?colorOnPrimarySurface" />
+            android:background="?attr/colorPrimaryContainer"
+            android:elevation="4dp"
+            android:orientation="horizontal"
+            android:visibility="invisible"
+            app:fitsSystemWindowsInsets="bottom">
 
-    </LinearLayout>
+            <EditText
+                android:id="@+id/edit_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:gravity="start|center_vertical"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine"
+                android:maxHeight="168dp"
+                android:minHeight="56dp"
+                android:padding="@dimen/keyline_margin"
+                android:textColor="?colorOnPrimaryContainer"
+                android:textSize="16sp" />
 
-    <com.hippo.widget.FabLayout
+            <ImageView
+                android:id="@+id/send"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="bottom"
+                android:background="?selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="16dp"
+                app:tint="?colorOnPrimaryContainer" />
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <com.hippo.ehviewer.ui.legacy.FabLayout
         android:id="@+id/fab_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingRight="@dimen/corner_fab_margin"
+        android:paddingEnd="@dimen/corner_fab_margin"
         android:paddingBottom="@dimen/corner_fab_margin"
         app:fitsSystemWindowsInsets="bottom">
 
@@ -98,5 +104,5 @@
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/v_reply_dark_x24" />
 
-    </com.hippo.widget.FabLayout>
-</FrameLayout>
+    </com.hippo.ehviewer.ui.legacy.FabLayout>
+</merge>

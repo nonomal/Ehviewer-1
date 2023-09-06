@@ -2,24 +2,28 @@
     public static final ** CREATOR;
 }
 
--assumenosideeffects class kotlin.jvm.internal.Intrinsics {
-    public static void check*(...);
-    public static void throw*(...);
-}
-
 -keepclasseswithmembernames,includedescriptorclasses class * {
     native <methods>;
 }
 
--keep,allowoptimization class com.hippo.ehviewer.ui.fragment.* extends com.hippo.ehviewer.ui.fragment.BaseFragment { }
--keep,allowoptimization class com.hippo.ehviewer.ui.fragment.* extends com.hippo.ehviewer.ui.fragment.BasePreferenceFragment { }
+# https://issuetracker.google.com/issues/190382641
+-keepclassmembers class kotlin.SafePublicationLazyImpl {
+    java.lang.Object _value;
+}
 
--keepnames class com.hippo.ehviewer.ui.scene.* { }
+-keep class androidx.viewpager.widget.ViewPager$LayoutParams { int position; }
 
--keepattributes SourceFile,LineNumberTable
+-keep class com.hippo.ehviewer.client.parser.Torrent { *; }
+-keep class com.hippo.ehviewer.client.parser.GalleryListResult { *; }
+-keep class com.hippo.ehviewer.client.parser.Limits { *; }
+-keep class com.hippo.ehviewer.client.data.BaseGalleryInfo { *; }
 
--renamesourcefileattribute
+# Ktor logger
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+
+-keepattributes LineNumberTable,SourceFile
+-renamesourcefileattribute SourceFile
+
 -repackageclasses
 -allowaccessmodification
--mergeinterfacesaggressively
 -overloadaggressively
